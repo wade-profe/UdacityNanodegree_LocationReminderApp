@@ -1,9 +1,12 @@
 package com.udacity.project4.locationreminders.savereminder
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
@@ -13,9 +16,14 @@ import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 
 class SaveReminderFragment : BaseFragment() {
+
     //Get the view model this time as a single to be shared with the another fragment
     override val _viewModel: SaveReminderViewModel by inject()
+
     private lateinit var binding: FragmentSaveReminderBinding
+
+    private val runningQOrLater =
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,5 +65,14 @@ class SaveReminderFragment : BaseFragment() {
         super.onDestroy()
         //make sure to clear the view model after destroy, as it's a single view model.
         _viewModel.onClear()
+    }
+
+    private fun requestBackgroundLocation(){
+        if(runningQOrLater && ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED){
+
+        }
     }
 }
