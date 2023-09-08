@@ -4,19 +4,14 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.app.Dialog
-import android.content.Context.LOCATION_SERVICE
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.LocationManager
-import android.location.LocationProvider
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.*
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.DialogCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.location.*
@@ -45,7 +40,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private lateinit var myLocation: FusedLocationProviderClient
 
-    val zoomLevel = 18f
+    val zoomLevel = 15f
 
     @SuppressLint("NewApi")
     val requestPermissionLauncher =
@@ -56,7 +51,23 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             if (isGranted) {
                 enableLocation()
             } else {
-                raisePermissionDeniedSnackBar()
+                if(shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+                    val builder = AlertDialog.Builder(requireContext())
+                    builder.setTitle("Test")
+                        .setMessage("Test")
+                        .setPositiveButton("Accept", DialogInterface.OnClickListener { dialog, which ->
+                            enableLocation()
+                            dialog.dismiss()
+                        })
+                        .setNegativeButton("Decline", DialogInterface.OnClickListener{ dialog, which ->
+                            raisePermissionDeniedSnackBar()
+                            dialog.dismiss()
+                        })
+                        .show()
+
+                } else {
+                    raisePermissionDeniedSnackBar()
+                }
             }
 
         }
@@ -136,7 +147,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             map.isMyLocationEnabled = true
-            var currentLocation: LatLng? = null
+            var currentLocation: LatLng?
             myLocation.lastLocation.addOnSuccessListener {
                 location ->
                 location?.let {
@@ -166,4 +177,5 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 })
             }.show()
     }
+
 }
