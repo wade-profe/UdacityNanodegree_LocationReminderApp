@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
@@ -10,6 +11,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -51,18 +53,22 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             if (isGranted) {
                 enableLocation()
             } else {
-                if(shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+                if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     val builder = AlertDialog.Builder(requireContext())
                     builder.setTitle("Test")
                         .setMessage("Test")
-                        .setPositiveButton("Accept", DialogInterface.OnClickListener { dialog, which ->
-                            enableLocation()
-                            dialog.dismiss()
-                        })
-                        .setNegativeButton("Decline", DialogInterface.OnClickListener{ dialog, which ->
-                            raisePermissionDeniedSnackBar()
-                            dialog.dismiss()
-                        })
+                        .setPositiveButton(
+                            "Accept",
+                            DialogInterface.OnClickListener { dialog, which ->
+                                enableLocation()
+                                dialog.dismiss()
+                            })
+                        .setNegativeButton(
+                            "Decline",
+                            DialogInterface.OnClickListener { dialog, which ->
+                                raisePermissionDeniedSnackBar()
+                                dialog.dismiss()
+                            })
                         .show()
 
                 } else {
@@ -70,6 +76,19 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 }
             }
 
+        }
+
+    private val openSettings =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            Log.d("WADE", "ActivityResult ${it.resultCode.toString()}")
+            when (it.resultCode) {
+                Activity.RESULT_OK or
+                        Activity.RESULT_CANCELED -> {
+                    Log.d("WADE", it.resultCode.toString())
+                    enableLocation()
+                }
+
+            }
         }
 
     override fun onCreateView(
@@ -87,7 +106,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
 
 
 //        TODO: add the map setup implementation
@@ -141,6 +159,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
+        Log.d("WADE", "Running enableLocation")
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -148,8 +167,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         ) {
             map.isMyLocationEnabled = true
             var currentLocation: LatLng?
-            myLocation.lastLocation.addOnSuccessListener {
-                location ->
+            myLocation.lastLocation.addOnSuccessListener { location ->
                 location?.let {
                     currentLocation = LatLng(location.latitude, location.longitude)
                     map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
@@ -168,14 +186,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             R.string.permission_denied_explanation, Snackbar.LENGTH_INDEFINITE
         )
             .setAction(R.string.settings) {
-                // Displays App settings screen.
-                startActivity(Intent().apply {
+                openSettings.launch(Intent().apply {
                     action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     data =
                         Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
+                // Displays App settings screen.
             }.show()
     }
-
 }
