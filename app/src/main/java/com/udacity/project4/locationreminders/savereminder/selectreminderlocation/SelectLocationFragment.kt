@@ -3,15 +3,12 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -33,6 +30,8 @@ import org.koin.android.ext.android.inject
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
+    // https://github.com/allchani/nd940-android-kotlin-c4-starter/blob/master/starter/app/src/main/java/com/udacity/project4/locationreminders/savereminder/selectreminderlocation/SelectLocationFragment.kt
+
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
 
@@ -43,6 +42,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var myLocation: FusedLocationProviderClient
 
     val zoomLevel = 15f
+
+    private var permissionStateHolder: Boolean? = null
 
     @SuppressLint("NewApi")
     val requestPermissionLauncher =
@@ -58,17 +59,17 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     builder.setTitle("Test")
                         .setMessage("Test")
                         .setPositiveButton(
-                            "Accept",
-                            DialogInterface.OnClickListener { dialog, which ->
-                                enableLocation()
-                                dialog.dismiss()
-                            })
+                            "Accept"
+                        ) { dialog, _ ->
+                            enableLocation()
+                            dialog.dismiss()
+                        }
                         .setNegativeButton(
-                            "Decline",
-                            DialogInterface.OnClickListener { dialog, which ->
-                                raisePermissionDeniedSnackBar()
-                                dialog.dismiss()
-                            })
+                            "Decline"
+                        ) { dialog, _ ->
+                            raisePermissionDeniedSnackBar()
+                            dialog.dismiss()
+                        }
                         .show()
 
                 } else {
@@ -78,22 +79,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         }
 
-    private val openSettings =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            Log.d("WADE", "ActivityResult ${it.resultCode.toString()}")
-            when (it.resultCode) {
-                Activity.RESULT_OK or
-                        Activity.RESULT_CANCELED -> {
-                    Log.d("WADE", it.resultCode.toString())
-                    enableLocation()
-                }
-
-            }
-        }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
 
@@ -106,7 +94,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
 
 //        TODO: add the map setup implementation
 //        TODO: zoom to the user location after taking his permission
@@ -157,14 +144,17 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         else -> super.onOptionsItemSelected(item)
     }
 
+    private fun permissionCheck(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
-        Log.d("WADE", "Running enableLocation")
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (permissionCheck()) {
+            enableSaveButton(true)
             map.isMyLocationEnabled = true
             var currentLocation: LatLng?
             myLocation.lastLocation.addOnSuccessListener { location ->
@@ -174,25 +164,43 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 }
             }
         } else {
+            enableSaveButton(false)
             requestPermissionLauncher.launch(
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         }
     }
 
-    fun raisePermissionDeniedSnackBar() {
+    private fun raisePermissionDeniedSnackBar() {
         Snackbar.make(
             binding.root,
             R.string.permission_denied_explanation, Snackbar.LENGTH_INDEFINITE
         )
             .setAction(R.string.settings) {
-                openSettings.launch(Intent().apply {
+                permissionStateHolder = permissionCheck()
+                startActivity(Intent().apply {
                     action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     data =
                         Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
-                // Displays App settings screen.
             }.show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        permissionStateHolder?.let {
+            if (permissionCheck()) {
+                enableLocation()
+            } else {
+                raisePermissionDeniedSnackBar()
+            }
+        }
+    }
+
+    private fun enableSaveButton(permissionGranted: Boolean){
+        if(_viewModel.fineLocationPermissionGranted.value != permissionGranted){
+            _viewModel.fineLocationPermissionGranted.value = permissionGranted
+        }
     }
 }

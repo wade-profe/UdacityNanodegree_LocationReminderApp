@@ -1,9 +1,13 @@
 package com.udacity.project4.utils
 
+import android.graphics.Color
+import android.util.Log
 import android.view.View
+import android.widget.Button
 import androidx.databinding.BindingAdapter
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
+import com.udacity.project4.R
 import com.udacity.project4.base.BaseRecyclerViewAdapter
 
 
@@ -42,6 +46,18 @@ object BindingAdapters {
                 if (view.visibility == View.VISIBLE)
                     view.fadeOut()
             }
+        }
+    }
+
+    @BindingAdapter("android:enabled")
+    @JvmStatic
+    fun setButtonEnabled(view: Button, enabled: Boolean){
+        if(enabled){
+            view.isEnabled = true
+            view.alpha = 1F
+        } else{
+            view.isEnabled = false
+            view.alpha = 0.3F
         }
     }
 }
