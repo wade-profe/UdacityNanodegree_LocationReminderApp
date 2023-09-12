@@ -113,8 +113,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         setMapStyle(map)
-        setPoiClick(map)
-        setMapLongClick(map)
         enableLocation()
     }
 
@@ -173,6 +171,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
                 }
             }
+            setPoiClick(map)
+            setMapLongClick(map)
         } else {
             enableSaveButton(false)
             requestPermissionLauncher.launch(

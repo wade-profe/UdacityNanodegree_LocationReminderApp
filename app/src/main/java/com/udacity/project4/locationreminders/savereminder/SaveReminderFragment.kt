@@ -53,6 +53,8 @@ class SaveReminderFragment : BaseFragment() {
         }
 
         binding.saveReminder.setOnClickListener {
+
+            // todo wrap the code in a method and then do a permission check, request permission if necessary and on success re-run the aforementioned method
             val title = _viewModel.reminderTitle.value
             val description = _viewModel.reminderDescription
             val selectLocation = _viewModel.selectedPOI
@@ -64,11 +66,13 @@ class SaveReminderFragment : BaseFragment() {
                 selectLocation.value?.latlng?.latitude,
                 selectLocation.value?.latlng?.longitude)
 
-            _viewModel.validateAndSaveReminder(reminderDataItem)
-
 //            TODO: use the user entered reminder details to:
 //             1) add a geofencing request
 //             2) save the reminder to the local db
+
+            _viewModel.validateAndSaveReminder(reminderDataItem)
+
+
         }
     }
 
