@@ -84,10 +84,4 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
         }
         return true
     }
-
-    fun selectedLocationString(): String{
-        return selectedPOI.value?.let{
-            selectedPOI.toString()
-        } ?: ""
-    }
 }
