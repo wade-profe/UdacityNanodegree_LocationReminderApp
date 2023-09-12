@@ -6,9 +6,11 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +28,7 @@ import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.locationreminders.savereminder.SelectedLocation
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import java.util.Locale
@@ -44,9 +47,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private var permissionStateHolder: Boolean? = null
 
-    private var selectedLatLng: LatLng? = null
-
-    private var selectedName: String? = null
+    private var selectedLocation: SelectedLocation? = null
 
     @SuppressLint("NewApi")
     val requestPermissionLauncher =
@@ -83,9 +84,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         }
 
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
+
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
 
@@ -93,35 +96,33 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         binding.lifecycleOwner = this
         myLocation = LocationServices.getFusedLocationProviderClient(requireContext())
 
+        binding.save.setOnClickListener {
+            onLocationSelected()
+        }
+
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-//        TODO: add the map setup implementation
-//        TODO: zoom to the user location after taking his permission
-//        TODO: add style to the map
-//        TODO: put a marker to location that the user selected
-
-
-//        TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
-
         return binding.root
+
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        setMapStyle(map)
         setPoiClick(map)
         setMapLongClick(map)
         enableLocation()
     }
 
     private fun onLocationSelected() {
-        //        TODO: When the user confirms on the selected location,
-        //         send back the selected location details to the view model
-        //         and navigate back to the previous fragment to save the reminder and add the geofence
+        selectedLocation?.let {
+            _viewModel.selectedPOI.value = selectedLocation
+        }
+        parentFragmentManager.popBackStack()
     }
 
 
@@ -130,20 +131,23 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        // TODO: Change the map type based on the user's selection.
         R.id.normal_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_NORMAL
             true
         }
 
         R.id.hybrid_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_HYBRID
             true
         }
 
         R.id.satellite_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_SATELLITE
             true
         }
 
         R.id.terrain_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_TERRAIN
             true
         }
 
@@ -204,8 +208,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
-    private fun enableSaveButton(permissionGranted: Boolean){
-        if(_viewModel.fineLocationPermissionGranted.value != permissionGranted){
+    private fun enableSaveButton(permissionGranted: Boolean) {
+        if (_viewModel.fineLocationPermissionGranted.value != permissionGranted) {
             _viewModel.fineLocationPermissionGranted.value = permissionGranted
         }
     }
@@ -220,8 +224,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .snippet(getString(R.string.poi_snippet))
             )
             poiMarker?.showInfoWindow()
-            selectedLatLng = poi.latLng
-            selectedName = poi.name
+            selectedLocation = SelectedLocation(poi.name, poi.latLng)
         }
     }
 
@@ -233,11 +236,24 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .position(latLng)
                     .title(getString(R.string.dropped_pin))
                     .snippet(getString(R.string.poi_snippet))
-            ).apply{
+            ).apply {
                 this?.showInfoWindow()
             }
-            selectedLatLng = latLng
-            selectedName = getString(R.string.dropped_pin)
+            selectedLocation = SelectedLocation(getString(R.string.dropped_pin), latLng)
+        }
+    }
+
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.map_style
+                )
+            )
+        } catch (e: RuntimeRemoteException) {
+            Toast.makeText(requireContext(), getString(R.string.error_happened), Toast.LENGTH_SHORT)
+                .show()
         }
     }
 }

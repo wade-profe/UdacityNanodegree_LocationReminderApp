@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder
 import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PointOfInterest
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseViewModel
@@ -12,14 +13,17 @@ import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.launch
 
+data class SelectedLocation(val name: String, val latlng: LatLng){
+    override fun toString(): String {
+        return "$name ${latlng.latitude}, ${latlng.longitude}"
+    }
+}
+
 class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSource) :
     BaseViewModel(app) {
     val reminderTitle = MutableLiveData<String?>()
     val reminderDescription = MutableLiveData<String?>()
-    val reminderSelectedLocationStr = MutableLiveData<String?>()
-    val selectedPOI = MutableLiveData<PointOfInterest?>() //todo replace this with a simpler data class that can accommodate POI and custom location
-    val latitude = MutableLiveData<Double?>()
-    val longitude = MutableLiveData<Double?>()
+    var selectedPOI = MutableLiveData<SelectedLocation?>()
     var fineLocationPermissionGranted: MutableLiveData<Boolean> = MutableLiveData(false)
     // todo add a variable for background permission granted, let it be initialized as null. Set the Save button clickability
     // based on this variable using a binding adapter - if null or if granted, then enabled, if denied, then disabled.
@@ -31,10 +35,7 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     fun onClear() {
         reminderTitle.value = null
         reminderDescription.value = null
-        reminderSelectedLocationStr.value = null
         selectedPOI.value = null
-        latitude.value = null
-        longitude.value = null
     }
 
     /**
@@ -82,5 +83,11 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
             return false
         }
         return true
+    }
+
+    fun selectedLocationString(): String{
+        return selectedPOI.value?.let{
+            selectedPOI.toString()
+        } ?: ""
     }
 }
