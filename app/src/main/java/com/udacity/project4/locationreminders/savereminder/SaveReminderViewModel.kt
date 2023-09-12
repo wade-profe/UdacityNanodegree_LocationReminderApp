@@ -17,10 +17,13 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     val reminderTitle = MutableLiveData<String?>()
     val reminderDescription = MutableLiveData<String?>()
     val reminderSelectedLocationStr = MutableLiveData<String?>()
-    val selectedPOI = MutableLiveData<PointOfInterest?>()
+    val selectedPOI = MutableLiveData<PointOfInterest?>() //todo replace this with a simpler data class that can accommodate POI and custom location
     val latitude = MutableLiveData<Double?>()
     val longitude = MutableLiveData<Double?>()
     var fineLocationPermissionGranted: MutableLiveData<Boolean> = MutableLiveData(false)
+    // todo add a variable for background permission granted, let it be initialized as null. Set the Save button clickability
+    // based on this variable using a binding adapter - if null or if granted, then enabled, if denied, then disabled.
+    // The background permission should be checked when the user clicks the save button on the Save Reminder fragment.
 
     /**
      * Clear the live data objects to start fresh next time the view model gets called

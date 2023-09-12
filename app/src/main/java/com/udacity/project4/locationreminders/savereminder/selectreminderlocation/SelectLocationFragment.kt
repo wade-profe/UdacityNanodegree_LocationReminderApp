@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.*
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
@@ -27,12 +28,10 @@ import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
+import java.util.Locale
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
-    // https://github.com/allchani/nd940-android-kotlin-c4-starter/blob/master/starter/app/src/main/java/com/udacity/project4/locationreminders/savereminder/selectreminderlocation/SelectLocationFragment.kt
-
-    //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
 
     private lateinit var binding: FragmentSelectLocationBinding
@@ -45,6 +44,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private var permissionStateHolder: Boolean? = null
 
+    private var selectedLatLng: LatLng? = null
+
+    private var selectedName: String? = null
+
     @SuppressLint("NewApi")
     val requestPermissionLauncher =
         registerForActivityResult(
@@ -53,19 +56,20 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         { isGranted ->
             if (isGranted) {
                 enableLocation()
+                Toast.makeText(requireActivity(), R.string.select_poi, Toast.LENGTH_LONG).show()
             } else {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     val builder = AlertDialog.Builder(requireContext())
-                    builder.setTitle("Test")
-                        .setMessage("Test")
+                    builder.setTitle(getString(R.string.permission_required))
+                        .setMessage(R.string.permission_denied_explanation)
                         .setPositiveButton(
-                            "Accept"
+                            getString(R.string.accept)
                         ) { dialog, _ ->
                             enableLocation()
                             dialog.dismiss()
                         }
                         .setNegativeButton(
-                            "Decline"
+                            R.string.decline
                         ) { dialog, _ ->
                             raisePermissionDeniedSnackBar()
                             dialog.dismiss()
@@ -109,6 +113,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        setPoiClick(map)
+        setMapLongClick(map)
         enableLocation()
     }
 
@@ -201,6 +207,37 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private fun enableSaveButton(permissionGranted: Boolean){
         if(_viewModel.fineLocationPermissionGranted.value != permissionGranted){
             _viewModel.fineLocationPermissionGranted.value = permissionGranted
+        }
+    }
+
+    private fun setPoiClick(map: GoogleMap) {
+        map.setOnPoiClickListener { poi ->
+            map.clear()
+            val poiMarker = map.addMarker(
+                MarkerOptions()
+                    .position(poi.latLng)
+                    .title(poi.name)
+                    .snippet(getString(R.string.poi_snippet))
+            )
+            poiMarker?.showInfoWindow()
+            selectedLatLng = poi.latLng
+            selectedName = poi.name
+        }
+    }
+
+    private fun setMapLongClick(map: GoogleMap) {
+        map.setOnMapLongClickListener { latLng ->
+            map.clear()
+            map.addMarker(
+                MarkerOptions()
+                    .position(latLng)
+                    .title(getString(R.string.dropped_pin))
+                    .snippet(getString(R.string.poi_snippet))
+            ).apply{
+                this?.showInfoWindow()
+            }
+            selectedLatLng = latLng
+            selectedName = getString(R.string.dropped_pin)
         }
     }
 }
