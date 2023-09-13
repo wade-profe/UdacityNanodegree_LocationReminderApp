@@ -1,5 +1,6 @@
 package com.udacity.project4.locationreminders.reminderslist
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
@@ -22,6 +23,7 @@ class ReminderListFragment : BaseFragment() {
     //use Koin to retrieve the ViewModel instance
     override val _viewModel: RemindersListViewModel by viewModel()
     private lateinit var binding: FragmentRemindersBinding
+    @SuppressLint("FragmentLiveDataObserve")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -41,7 +43,7 @@ class ReminderListFragment : BaseFragment() {
             _viewModel.loadReminders()
         }
 
-        _viewModel.showLoading.observe(viewLifecycleOwner) {
+        _viewModel.showLoading.observe(this) {
             binding.refreshLayout.isRefreshing = it
         }
 

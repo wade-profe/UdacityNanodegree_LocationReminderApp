@@ -37,6 +37,7 @@
     <string name="poi_snippet">Press save to add a reminder for this location</string>
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
+    <string name="background_permission_rationale">In order for your reminders to work properly, you must enable location access</string>
 
 
     <!-- Error strings -->

@@ -51,7 +51,7 @@ object BindingAdapters {
 
     @BindingAdapter("android:enabled")
     @JvmStatic
-    fun setButtonEnabled(view: Button, enabled: Boolean){
+    fun setButtonEnabled(view: View, enabled: Boolean){
         if(enabled){
             view.isEnabled = true
             view.alpha = 1F

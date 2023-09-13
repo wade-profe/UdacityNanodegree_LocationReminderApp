@@ -1,6 +1,9 @@
 package com.udacity.project4.base
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -40,5 +43,14 @@ abstract class BaseFragment : Fragment() {
                 )
             }
         })
+    }
+
+    open fun permissionCheck(permission: String?): Boolean? {
+        return permission?.let {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        }
     }
 }

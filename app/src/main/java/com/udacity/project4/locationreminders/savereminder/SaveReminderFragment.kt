@@ -1,16 +1,23 @@
 package com.udacity.project4.locationreminders.savereminder
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.material.snackbar.Snackbar
+import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
@@ -29,6 +36,21 @@ class SaveReminderFragment : BaseFragment() {
     private val runningQOrLater =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
+    private var permissionStateHolder: Boolean? = null
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        )
+        { isGranted ->
+            if (isGranted) {
+                enableSaving()
+            } else {
+                raisePermissionDeniedSnackBar()
+            }
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -43,6 +65,7 @@ class SaveReminderFragment : BaseFragment() {
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
@@ -64,7 +87,8 @@ class SaveReminderFragment : BaseFragment() {
                 description.value,
                 selectLocation.value?.name,
                 selectLocation.value?.latlng?.latitude,
-                selectLocation.value?.latlng?.longitude)
+                selectLocation.value?.latlng?.longitude
+            )
 
 //            TODO: use the user entered reminder details to:
 //             1) add a geofencing request
@@ -72,7 +96,18 @@ class SaveReminderFragment : BaseFragment() {
 
             _viewModel.validateAndSaveReminder(reminderDataItem)
 
+        }
 
+        enableSaving()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun enableSaving() {
+        if (permissionCheck(null)) {
+            enableSaveButton(true)
+        } else {
+            enableSaveButton(false)
+            raiseExplanationDialogue()
         }
     }
 
@@ -82,12 +117,70 @@ class SaveReminderFragment : BaseFragment() {
         _viewModel.onClear()
     }
 
-    private fun requestBackgroundLocation(){
-        if(runningQOrLater && ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED){
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun raisePermissionDeniedSnackBar() {
+        Snackbar.make(
+            binding.root,
+            R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
+        )
+            .setAction(R.string.settings) {
+                permissionStateHolder = permissionCheck(null)
+                startActivity(Intent().apply {
+                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                    data =
+                        Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+            }.show()
+    }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun raiseExplanationDialogue() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle(getString(R.string.permission_required))
+            .setMessage(R.string.background_permission_rationale)
+            .setPositiveButton(
+                getString(R.string.accept)
+            ) { dialog, _ ->
+                requestPermissionLauncher.launch(
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                )
+                dialog.dismiss()
+            }
+            .setNegativeButton(
+                R.string.decline
+            ) { dialog, _ ->
+                raisePermissionDeniedSnackBar()
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun enableSaveButton(permissionGranted: Boolean) {
+        if (_viewModel.backgroundLocationEnabled.value != permissionGranted) {
+            _viewModel.backgroundLocationEnabled.value = permissionGranted
+        }
+    }
+
+
+    // Returns true if background location is not required
+    @RequiresApi(Build.VERSION_CODES.Q)
+    override fun permissionCheck(permission: String?): Boolean {
+        return !runningQOrLater || ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    override fun onResume() {
+        super.onResume()
+        permissionStateHolder?.let {
+            if (permissionCheck(null)) {
+                enableSaveButton(true)
+            } else {
+                raisePermissionDeniedSnackBar()
+            }
         }
     }
 }

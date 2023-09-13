@@ -152,16 +152,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         else -> super.onOptionsItemSelected(item)
     }
 
-    private fun permissionCheck(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
-        if (permissionCheck()) {
+        if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)!!) {
             enableSaveButton(true)
             map.isMyLocationEnabled = true
             var currentLocation: LatLng?
@@ -187,7 +180,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             R.string.permission_denied_explanation, Snackbar.LENGTH_INDEFINITE
         )
             .setAction(R.string.settings) {
-                permissionStateHolder = permissionCheck()
+                permissionStateHolder = permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)
                 startActivity(Intent().apply {
                     action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     data =
@@ -200,7 +193,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         permissionStateHolder?.let {
-            if (permissionCheck()) {
+            if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)!!) {
                 enableLocation()
             } else {
                 raisePermissionDeniedSnackBar()
