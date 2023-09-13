@@ -45,8 +45,9 @@ class SaveReminderFragment : BaseFragment() {
         )
         { isGranted ->
             if (isGranted) {
-                enableSaving()
+                enableSaveButton(true)
             } else {
+                enableSaveButton(false)
                 raisePermissionDeniedSnackBar()
             }
         }
@@ -77,7 +78,6 @@ class SaveReminderFragment : BaseFragment() {
 
         binding.saveReminder.setOnClickListener {
 
-            // todo wrap the code in a method and then do a permission check, request permission if necessary and on success re-run the aforementioned method
             val title = _viewModel.reminderTitle.value
             val description = _viewModel.reminderDescription
             val selectLocation = _viewModel.selectedPOI
@@ -90,25 +90,22 @@ class SaveReminderFragment : BaseFragment() {
                 selectLocation.value?.latlng?.longitude
             )
 
+            if(_viewModel.validateEnteredData(reminderDataItem)){
+                if(permissionCheck(null)){
+                    _viewModel.validateAndSaveReminder(reminderDataItem)
+                } else{
+                    raiseExplanationDialogue()
+                }
+            }
+
+
 //            TODO: use the user entered reminder details to:
 //             1) add a geofencing request
 //             2) save the reminder to the local db
 
-            _viewModel.validateAndSaveReminder(reminderDataItem)
 
         }
 
-        enableSaving()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private fun enableSaving() {
-        if (permissionCheck(null)) {
-            enableSaveButton(true)
-        } else {
-            enableSaveButton(false)
-            raiseExplanationDialogue()
-        }
     }
 
     override fun onDestroy() {
@@ -150,6 +147,7 @@ class SaveReminderFragment : BaseFragment() {
             .setNegativeButton(
                 R.string.decline
             ) { dialog, _ ->
+                enableSaveButton(false)
                 raisePermissionDeniedSnackBar()
                 dialog.dismiss()
             }
