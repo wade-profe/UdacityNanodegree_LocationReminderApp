@@ -113,6 +113,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         setMapStyle(map)
+        setPoiClick(map)
+        setMapLongClick(map)
         enableLocation()
     }
 
@@ -155,7 +157,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
         if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)!!) {
-            enableSaveButton(true)
             map.isMyLocationEnabled = true
             var currentLocation: LatLng?
             myLocation.lastLocation.addOnSuccessListener { location ->
@@ -164,10 +165,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
                 }
             }
-            setPoiClick(map)
-            setMapLongClick(map)
         } else {
-            enableSaveButton(false)
             requestPermissionLauncher.launch(
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
@@ -198,12 +196,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             } else {
                 raisePermissionDeniedSnackBar()
             }
-        }
-    }
-
-    private fun enableSaveButton(permissionGranted: Boolean) {
-        if (_viewModel.fineLocationPermissionGranted.value != permissionGranted) {
-            _viewModel.fineLocationPermissionGranted.value = permissionGranted
         }
     }
 

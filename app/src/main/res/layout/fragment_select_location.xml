@@ -41,8 +41,7 @@
                 android:layout_marginBottom="10dp"
                 android:text="@string/save"
                 android:background="@color/colorAccent"
-                android:textColor="@color/white"
-                android:enabled="@{viewModel.fineLocationPermissionGranted}"/>
+                android:textColor="@color/white" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

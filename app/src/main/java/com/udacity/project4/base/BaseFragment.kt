@@ -45,12 +45,9 @@ abstract class BaseFragment : Fragment() {
         })
     }
 
-    open fun permissionCheck(permission: String?): Boolean? {
-        return permission?.let {
-            ContextCompat.checkSelfPermission(
+    open fun permissionCheck(permission: String): Boolean? {
+        return ContextCompat.checkSelfPermission(
                 requireContext(),
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
-        }
+                permission) == PackageManager.PERMISSION_GRANTED
     }
 }

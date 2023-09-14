@@ -24,7 +24,6 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     val reminderTitle = MutableLiveData<String?>()
     val reminderDescription = MutableLiveData<String?>()
     var selectedPOI = MutableLiveData<SelectedLocation?>()
-    var fineLocationPermissionGranted: MutableLiveData<Boolean> = MutableLiveData(false)
     var backgroundLocationEnabled: MutableLiveData<Boolean> = MutableLiveData(true)
 
     /**

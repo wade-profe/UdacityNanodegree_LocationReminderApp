@@ -11,11 +11,12 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
@@ -36,10 +37,12 @@ class SaveReminderFragment : BaseFragment() {
     private val runningQOrLater =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
-    private var permissionStateHolder: Boolean? = null
+    private var snackbarWasTapped: Boolean? = null
+
+    lateinit var geofencingClient: GeofencingClient
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    val requestPermissionLauncher =
+    val requestBackgroundLocationPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         )
@@ -52,12 +55,32 @@ class SaveReminderFragment : BaseFragment() {
             }
         }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    val requestFineLocationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        )
+        { isGranted ->
+            if (isGranted) {
+                if (!permissionCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                    raiseExplanationDialogue()
+                } else {
+                    enableSaveButton(true)
+                }
+            } else {
+                enableSaveButton(false)
+                raisePermissionDeniedSnackBar()
+            }
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_save_reminder, container, false)
+
+        geofencingClient = LocationServices.getGeofencingClient(requireContext())
 
         setDisplayHomeAsUpEnabled(true)
 
@@ -90,11 +113,15 @@ class SaveReminderFragment : BaseFragment() {
                 selectLocation.value?.latlng?.longitude
             )
 
-            if(_viewModel.validateEnteredData(reminderDataItem)){
-                if(permissionCheck(null)){
-                    _viewModel.validateAndSaveReminder(reminderDataItem)
-                } else{
-                    raiseExplanationDialogue()
+            if (_viewModel.validateEnteredData(reminderDataItem)) {
+                if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    if (permissionCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                        _viewModel.validateAndSaveReminder(reminderDataItem)
+                    } else {
+                        raiseExplanationDialogue()
+                    }
+                } else {
+                    requestFineLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             }
 
@@ -121,7 +148,7 @@ class SaveReminderFragment : BaseFragment() {
             R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
         )
             .setAction(R.string.settings) {
-                permissionStateHolder = permissionCheck(null)
+                snackbarWasTapped = true
                 startActivity(Intent().apply {
                     action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                     data =
@@ -139,7 +166,7 @@ class SaveReminderFragment : BaseFragment() {
             .setPositiveButton(
                 getString(R.string.accept)
             ) { dialog, _ ->
-                requestPermissionLauncher.launch(
+                requestBackgroundLocationPermissionLauncher.launch(
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 )
                 dialog.dismiss()
@@ -163,22 +190,65 @@ class SaveReminderFragment : BaseFragment() {
 
     // Returns true if background location is not required
     @RequiresApi(Build.VERSION_CODES.Q)
-    override fun permissionCheck(permission: String?): Boolean {
-        return !runningQOrLater || ContextCompat.checkSelfPermission(
-            requireContext(),
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+    override fun permissionCheck(permission: String): Boolean {
+        return if (permission == Manifest.permission.ACCESS_BACKGROUND_LOCATION) {
+            !runningQOrLater || ContextCompat.checkSelfPermission(
+                requireContext(),
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onResume() {
         super.onResume()
-        permissionStateHolder?.let {
-            if (permissionCheck(null)) {
+        if(snackbarWasTapped == true){
+            if(permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)){
                 enableSaveButton(true)
-            } else {
-                raisePermissionDeniedSnackBar()
             }
         }
     }
+
+    /**
+     *     @SuppressLint("MissingPermission")
+     *     private fun addGeofenceForReminder() {
+     *
+     *         val geofence = Geofence.Builder()
+     *             .setRequestId(reminderData.id)
+     *             .setCircularRegion(
+     *                 reminderData.latitude!!,
+     *                 reminderData.longitude!!,
+     *                 GEOFENCE_RADIUS_IN_METERS
+     *             )
+     *             .setExpirationDuration(Geofence.NEVER_EXPIRE)
+     *             .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+     *             .build()
+     *
+     *         val geofencingRequest = GeofencingRequest.Builder()
+     *             .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+     *             .addGeofence(geofence)
+     *             .build()
+     *
+     *
+     *         geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+     *             addOnSuccessListener {
+     *                 _viewModel.validateAndSaveReminder(reminderData)
+     *                 _viewModel.showSnackBarInt.value = R.string.geofences_added
+     *                 Log.e("Add Geofence", geofence.requestId)
+     *             }
+     *             addOnFailureListener {
+     *                 _viewModel.showSnackBarInt.value = R.string.geofences_not_added
+     *                 if ((it.message != null)) {
+     *                     Log.w(TAG, it.message!!)
+     *                 }
+     *             }
+     *         }
+     *     }
+     */
 }
