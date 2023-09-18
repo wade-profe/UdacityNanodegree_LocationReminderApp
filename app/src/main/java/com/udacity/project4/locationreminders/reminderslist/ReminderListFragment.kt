@@ -32,12 +32,16 @@ class ReminderListFragment : BaseFragment() {
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         )
-        { _ ->
-            if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-                raiseExplanationDialogue()
-            } else {
-                _viewModel.notificationEnabled.value = false
+        { isEnabled ->
+            if(isEnabled){
                 navigateToAddReminder()
+            } else{
+                if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                    raiseExplanationDialogue()
+                } else {
+                    _viewModel.notificationEnabled.value = false
+                    navigateToAddReminder()
+                }
             }
         }
 
