@@ -39,31 +39,9 @@ class SaveReminderFragment : BaseFragment() {
 
     //Get the view model this time as a single to be shared with the another fragment
     override val _viewModel: SaveReminderViewModel by inject()
-
     private lateinit var binding: FragmentSaveReminderBinding
-
-    private lateinit var reminderDataItem:ReminderDataItem
-
-    private val runningQOrLater =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-
-    private var snackbarWasTapped: Boolean? = null
-
+    private lateinit var reminderDataItem: ReminderDataItem
     lateinit var geofencingClient: GeofencingClient
-
-    @RequiresApi(Build.VERSION_CODES.Q)
-    val requestBackgroundLocationPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        )
-        { isGranted ->
-            if (isGranted) {
-                enableSaveButton(true)
-            } else {
-                enableSaveButton(false)
-                raisePermissionDeniedSnackBar()
-            }
-        }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     val requestFineLocationPermissionLauncher =
@@ -79,7 +57,21 @@ class SaveReminderFragment : BaseFragment() {
                 }
             } else {
                 enableSaveButton(false)
-                raisePermissionDeniedSnackBar()
+                raisePermissionDeniedSnackBar(getString(R.string.location_required_error))
+            }
+        }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    val requestBackgroundLocationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        )
+        { isGranted ->
+            if (isGranted) {
+                enableSaveButton(true)
+            } else {
+                enableSaveButton(false)
+                raisePermissionDeniedSnackBar(getString(R.string.location_required_error))
             }
         }
 
@@ -157,23 +149,6 @@ class SaveReminderFragment : BaseFragment() {
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private fun raisePermissionDeniedSnackBar() {
-        Snackbar.make(
-            binding.root,
-            R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
-        )
-            .setAction(R.string.settings) {
-                snackbarWasTapped = true
-                startActivity(Intent().apply {
-                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                    data =
-                        Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                })
-            }.show()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.Q)
     private fun raiseExplanationDialogue() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(getString(R.string.permission_required))
@@ -190,7 +165,7 @@ class SaveReminderFragment : BaseFragment() {
                 R.string.decline
             ) { dialog, _ ->
                 enableSaveButton(false)
-                raisePermissionDeniedSnackBar()
+                raisePermissionDeniedSnackBar(getString(R.string.location_required_error))
                 dialog.dismiss()
             }
             .show()
@@ -202,42 +177,26 @@ class SaveReminderFragment : BaseFragment() {
         }
     }
 
-
-    // Returns true if background location is not required
-    @RequiresApi(Build.VERSION_CODES.Q)
-    override fun permissionCheck(permission: String): Boolean {
-        return if (permission == Manifest.permission.ACCESS_BACKGROUND_LOCATION) {
-            !runningQOrLater || ContextCompat.checkSelfPermission(
-                requireContext(),
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-
-    }
-
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onResume() {
         super.onResume()
-        if(snackbarWasTapped == true){
-            if(permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)){
+        if (snackBarWasTapped == true) {
+            if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                permissionCheck(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                 enableSaveButton(true)
             }
         }
     }
 
     @SuppressLint("VisibleForTests", "MissingPermission")
-    private fun createGeofence(){
+    private fun createGeofence() {
         val geofence = Geofence.Builder()
             .setRequestId(reminderDataItem.id)
             .setCircularRegion(
                 reminderDataItem.latitude!!,
                 reminderDataItem.longitude!!,
-                GEOFENCE_RADIUS)
+                GEOFENCE_RADIUS
+            )
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
             .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
             .build()
@@ -252,7 +211,11 @@ class SaveReminderFragment : BaseFragment() {
                 _viewModel.validateAndSaveReminder(reminderDataItem)
             }
             addOnFailureListener {
-                Toast.makeText(requireContext(), getString(R.string.geofences_not_added), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.geofences_not_added),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
 

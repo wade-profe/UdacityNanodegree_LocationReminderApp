@@ -38,7 +38,8 @@
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
     <string name="background_permission_rationale">In order for your reminders to work properly, you must enable location access \"all the time\"</string>
-
+    <string name="notification_permission_rationale">In order to send you reminders when entering your selected locations, you need to grant the app notification permission</string>
+    <string name="notification_permission_denied">You need to grant notification permission to receive real-time reminders for your locations</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>

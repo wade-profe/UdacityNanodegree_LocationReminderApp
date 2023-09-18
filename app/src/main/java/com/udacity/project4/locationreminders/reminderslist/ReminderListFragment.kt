@@ -1,19 +1,22 @@
 package com.udacity.project4.locationreminders.reminderslist
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.map
 import com.firebase.ui.auth.AuthUI
 import com.udacity.project4.R
 import com.udacity.project4.authentication.AuthenticationActivity
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentRemindersBinding
-import com.udacity.project4.locationreminders.RemindersActivity
-import com.udacity.project4.utils.FirebaseUserLiveData
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.setTitle
 import com.udacity.project4.utils.setup
@@ -23,11 +26,28 @@ class ReminderListFragment : BaseFragment() {
     //use Koin to retrieve the ViewModel instance
     override val _viewModel: RemindersListViewModel by viewModel()
     private lateinit var binding: FragmentRemindersBinding
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    val requestNotificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        )
+        { _ ->
+            if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                raiseExplanationDialogue()
+            } else {
+                _viewModel.notificationEnabled.value = false
+                navigateToAddReminder()
+            }
+        }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("FragmentLiveDataObserve")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding =
             DataBindingUtil.inflate(
                 inflater,
@@ -47,15 +67,28 @@ class ReminderListFragment : BaseFragment() {
             binding.refreshLayout.isRefreshing = it
         }
 
+        _viewModel.notificationEnabled.observe(viewLifecycleOwner){
+            when(it){
+                false -> raisePermissionDeniedSnackBar(getString(R.string.notification_permission_denied))
+                else -> {}
+            }
+        }
+
         return binding.root
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
         setupRecyclerView()
         binding.addReminderFAB.setOnClickListener {
-            navigateToAddReminder()
+            if (!permissionCheck(Manifest.permission.POST_NOTIFICATIONS)) {
+                Log.d("WADE", "Requesting permission")
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                navigateToAddReminder()
+            }
         }
     }
 
@@ -100,6 +133,29 @@ class ReminderListFragment : BaseFragment() {
         super.onCreateOptionsMenu(menu, inflater)
 //        display logout as menu item
         inflater.inflate(R.menu.main_menu, menu)
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun raiseExplanationDialogue() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle(getString(R.string.permission_required))
+            .setMessage(R.string.notification_permission_rationale)
+            .setPositiveButton(
+                getString(R.string.accept)
+            ) { dialog, _ ->
+                requestNotificationPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+                dialog.dismiss()
+            }
+            .setNegativeButton(
+                R.string.decline
+            ) { dialog, _ ->
+                _viewModel.notificationEnabled.value = false
+                dialog.dismiss()
+            }
+            .show()
     }
 
 }

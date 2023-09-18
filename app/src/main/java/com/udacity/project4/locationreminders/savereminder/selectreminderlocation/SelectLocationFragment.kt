@@ -43,9 +43,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private lateinit var myLocation: FusedLocationProviderClient
 
-    val zoomLevel = 15f
-
-    private var permissionStateHolder: Boolean? = null
+    private val zoomLevel = 15f
 
     private var selectedLocation: SelectedLocation? = null
 
@@ -72,13 +70,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                         .setNegativeButton(
                             R.string.decline
                         ) { dialog, _ ->
-                            raisePermissionDeniedSnackBar()
+                            raisePermissionDeniedSnackBar(getString(R.string.permission_denied_explanation))
                             dialog.dismiss()
                         }
                         .show()
 
                 } else {
-                    raisePermissionDeniedSnackBar()
+                    raisePermissionDeniedSnackBar(getString(R.string.permission_denied_explanation))
                 }
             }
 
@@ -156,7 +154,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
-        if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)!!) {
+        if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
             map.isMyLocationEnabled = true
             var currentLocation: LatLng?
             myLocation.lastLocation.addOnSuccessListener { location ->
@@ -172,29 +170,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
-    private fun raisePermissionDeniedSnackBar() {
-        Snackbar.make(
-            binding.root,
-            R.string.permission_denied_explanation, Snackbar.LENGTH_INDEFINITE
-        )
-            .setAction(R.string.settings) {
-                permissionStateHolder = permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)
-                startActivity(Intent().apply {
-                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                    data =
-                        Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                })
-            }.show()
-    }
-
     override fun onResume() {
         super.onResume()
-        permissionStateHolder?.let {
-            if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)!!) {
+        snackBarWasTapped?.let {
+            if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
                 enableLocation()
             } else {
-                raisePermissionDeniedSnackBar()
+                raisePermissionDeniedSnackBar(getString(R.string.permission_denied_explanation))
             }
         }
     }
