@@ -42,10 +42,11 @@
                 android:text="@{item.description}"
                 android:textSize="@dimen/text_size_small"
                 app:layout_constraintStart_toStartOf="@id/title"
-                app:layout_constraintTop_toBottomOf="@id/title"
+                app:layout_constraintTop_toBottomOf="@id/location"
                 tools:text="Description" />
 
             <TextView
+                android:id="@+id/location"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
