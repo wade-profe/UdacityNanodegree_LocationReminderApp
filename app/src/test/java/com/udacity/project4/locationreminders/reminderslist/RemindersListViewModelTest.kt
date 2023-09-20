@@ -1,6 +1,7 @@
 package com.udacity.project4.locationreminders.reminderslist
 
 import android.app.Application
+import android.os.Build
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -28,9 +29,11 @@ import org.koin.test.AutoCloseKoinTest
 import org.koin.test.get
 import org.koin.test.inject
 import org.hamcrest.Matchers.*
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class RemindersListViewModelTest: AutoCloseKoinTest() {
 
     @get:Rule
