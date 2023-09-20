@@ -27,7 +27,7 @@ class FakeDataSource : ReminderDataSource {
     }
 
     override suspend fun deleteAllReminders() {
-        TODO("delete all the reminders")
+        remindersList.clear()
     }
 
     fun addReminders(vararg reminder: ReminderDTO){
