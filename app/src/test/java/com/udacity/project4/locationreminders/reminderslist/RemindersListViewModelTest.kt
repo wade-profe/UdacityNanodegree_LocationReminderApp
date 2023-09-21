@@ -7,7 +7,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
-import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.getOrAwaitValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,7 +42,7 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
     @get:Rule
     var mainCoroutineRule = MainCoroutineRule()
 
-    private lateinit var repository: ReminderDataSource
+    private lateinit var repository: FakeDataSource
     private lateinit var appContext: Application
     val viewModel: RemindersListViewModel by inject()
 
@@ -55,10 +54,10 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
             viewModel {
                 RemindersListViewModel(
                     appContext,
-                    get() as ReminderDataSource
+                    get() as FakeDataSource
                 )
             }
-            single { FakeDataSource() as ReminderDataSource }
+            single { FakeDataSource() }
         }
         //declare a new koin module
         startKoin {
@@ -93,20 +92,13 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
         assertThat(viewModel.showNoData.getOrAwaitValue(), `is`(true))
     }
 
-//    @Test
-//    fun loadReminders_RepoReturnsError_SnackbarMessageSetCorrectly() = runTest{
-//        // Given - the repository returns an error
-//        repository.shouldReturnError = true
-//        // When loadReminders is called
-//        viewModel.loadReminders()
-//        // Then showSnackBar variable is updated with the correct message
-//        assertThat(viewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
-//    }
-
-
-
-
-
-    //TODO: provide testing to the RemindersListViewModel and its live data objects
-
+    @Test
+    fun loadReminders_RepoReturnsError_SnackbarMessageSetCorrectly() = runTest{
+        // Given - the repository returns an error
+        repository.shouldReturnError = true
+        // When loadReminders is called
+        viewModel.loadReminders()
+        // Then showSnackBar variable is updated with the correct message
+        assertThat(viewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
+    }
 }
