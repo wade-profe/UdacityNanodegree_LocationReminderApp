@@ -25,10 +25,10 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.hamcrest.Matchers.*
 import org.koin.test.AutoCloseKoinTest
 import org.koin.test.get
 import org.koin.test.inject
-import org.hamcrest.Matchers.*
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
@@ -75,11 +75,35 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
     @Test
     fun loadReminders_showLoadingSetCorrectly() = runTest{
         Dispatchers.setMain(StandardTestDispatcher())
+        //Given - loadReminders function is called
         viewModel.loadReminders()
-        assertThat(viewModel.showLoading.getOrAwaitValue(), equalTo(true))
+        // When the
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(true))
         advanceUntilIdle()
-        assertThat(viewModel.showLoading.getOrAwaitValue(), equalTo(false))
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
+
+    @Test
+    fun loadReminders_EmptyList_ShowNoDataTrue() = runTest{
+        // Given - there are no reminders
+        repository.deleteAllReminders()
+        // When - loadReminders is called
+        viewModel.loadReminders()
+        // Then - Show no data is set to true
+        assertThat(viewModel.showNoData.getOrAwaitValue(), `is`(true))
+    }
+
+//    @Test
+//    fun loadReminders_RepoReturnsError_SnackbarMessageSetCorrectly() = runTest{
+//        // Given - the repository returns an error
+//        repository.shouldReturnError = true
+//        // When loadReminders is called
+//        viewModel.loadReminders()
+//        // Then showSnackBar variable is updated with the correct message
+//        assertThat(viewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
+//    }
+
+
 
 
 

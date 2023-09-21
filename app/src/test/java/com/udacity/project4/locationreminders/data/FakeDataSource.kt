@@ -30,13 +30,4 @@ class FakeDataSource : ReminderDataSource {
         remindersList.clear()
     }
 
-    fun addReminders(vararg reminder: ReminderDTO){
-        reminder.forEach {
-            remindersList.add(it)
-        }
-    }
-
-
-
-
 }
