@@ -203,7 +203,7 @@ class SaveReminderViewModelTest : AutoCloseKoinTest() {
     }
 
     @Test
-    fun dfg() = runTest {
+    fun savereminder_validReminder_savedInRepository() = runTest {
         // Given - a valid ReminderDataItem
         val reminder = ReminderDataItem(
             "Test title",
@@ -229,17 +229,57 @@ class SaveReminderViewModelTest : AutoCloseKoinTest() {
         assertThat(repository.remindersList.contains(asDto), `is`(true))
     }
 
+    fun validateAndSaveReminder_invalidReminder_notSavedInRepository() = runTest {
+        // Given - a reminderDataItem with missing values
+        val reminder = ReminderDataItem(
+            null,
+            "Test description",
+            "Test location",
+            123.123,
+            456.456
+        )
 
-    /**
+        val asDto = ReminderDTO(
+            reminder.title,
+            reminder.description,
+            reminder.location,
+            reminder.latitude,
+            reminder.longitude,
+            reminder.id
+        )
+        // Given - repository reminders list is empty
+        repository.deleteAllReminders()
+        // When - validateAndSaveReminder is called
+        viewModel.validateAndSaveReminder(reminder)
+        // Then - reminder is not saved
+        assertThat(repository.remindersList.size, `is`(0))
+        assertThat(repository.remindersList.contains(asDto), `is`(false))
+    }
 
-     *
-     * Not sure if below is necessary:
-     * Given - a reminderDataItem with missing values
-     * When - validateAndSaveReminder is called
-     * Then - reminder is not saved
-     *
-     * Given - a reminderDataItem with valid values
-     * When - validateAndSaveReminder is called
-     * Then - reminder is saved
-     */
+    fun validateAndSaveReminder_validReminder_savedInRepository() = runTest {
+        // Given - a reminderDataItem with missing values
+        val reminder = ReminderDataItem(
+            "Test title",
+            "Test description",
+            "Test location",
+            123.123,
+            456.456
+        )
+
+        val asDto = ReminderDTO(
+            reminder.title,
+            reminder.description,
+            reminder.location,
+            reminder.latitude,
+            reminder.longitude,
+            reminder.id
+        )
+        // Given - repository reminders list is empty
+        repository.deleteAllReminders()
+        // When - validateAndSaveReminder is called
+        viewModel.validateAndSaveReminder(reminder)
+        // Then - reminder is not saved
+        assertThat(repository.remindersList.size, `is`(1))
+        assertThat(repository.remindersList.contains(asDto), `is`(true))
+    }
 }
