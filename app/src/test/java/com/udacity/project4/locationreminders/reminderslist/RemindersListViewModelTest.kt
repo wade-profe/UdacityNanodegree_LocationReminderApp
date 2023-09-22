@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
+import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.getOrAwaitValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -76,9 +77,12 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
         Dispatchers.setMain(StandardTestDispatcher())
         //Given - loadReminders function is called
         viewModel.loadReminders()
-        // When the
+        // When - the function has started
+        // Then showLoading value is true
         assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(true))
+        // When - the function has progressed to the end
         advanceUntilIdle()
+        // Then - showLoading value is false
         assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
 
@@ -96,9 +100,23 @@ class RemindersListViewModelTest: AutoCloseKoinTest() {
     fun loadReminders_RepoReturnsError_SnackbarMessageSetCorrectly() = runTest{
         // Given - the repository returns an error
         repository.shouldReturnError = true
-        // When loadReminders is called
+        // When - loadReminders is called
         viewModel.loadReminders()
-        // Then showSnackBar variable is updated with the correct message
+        // Then - showSnackBar variable is updated with the correct message
         assertThat(viewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
     }
+
+    @Test
+    fun loadReminders_RepoReturnsReminders_ViewModelRemindersListUpdatedCorrectly() = runTest {
+        // Given - the repository has reminders
+        repository.saveReminder(ReminderDTO("Title1", "Description1", "Location1", 123.123, 456.456))
+        repository.saveReminder(ReminderDTO("Title2", "Description2", "Location2", 124.124, 457.457))
+        repository.saveReminder(ReminderDTO("Title3", "Description3", "Location3", 125.125, 458.458))
+        // When - loadReminders is called
+        viewModel.loadReminders()
+        // Then - the remindersList is populated with the reminders from the repository
+        assertThat(viewModel.remindersList.value?.size, `is`(3))
+    }
+
+
 }
