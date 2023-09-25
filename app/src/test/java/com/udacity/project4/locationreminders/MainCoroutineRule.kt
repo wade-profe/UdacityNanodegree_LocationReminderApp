@@ -12,7 +12,7 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 @ExperimentalCoroutinesApi
-class MainCoroutineRule(val dispatcher: TestDispatcher = UnconfinedTestDispatcher()):
+class MainCoroutineRule(private val dispatcher: TestDispatcher = UnconfinedTestDispatcher()):
     TestWatcher() {
 
     override fun starting(description: Description?) {

@@ -123,9 +123,9 @@ dependencies {
     debugImplementation "androidx.fragment:fragment-testing:$fragmentVersion"
     implementation "androidx.test:core:$androidXTestCoreVersion"
     implementation "androidx.fragment:fragment:$fragmentVersion"
-    androidTestImplementation "org.mockito:mockito-core:$mockitoVersion"
+    androidTestImplementation "org.mockito:mockito-core:3.12.4"
     androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:$dexMakerVersion"
-    androidTestImplementation('org.koin:koin-test:2.0.1') { exclude group: 'org.mockito' }
+    androidTestImplementation('io.insert-koin:koin-test:3.5.0') { exclude group: 'org.mockito' }
     androidTestImplementation "io.insert-koin:koin-test:$koinVersion"
     androidTestImplementation "io.insert-koin:koin-test-junit4:$koinVersion"
 
