@@ -32,7 +32,6 @@ class RemindersLocalRepositoryTest {
 
     @Before
     fun setup() {
-        // Using an in-memory database for testing, because it doesn't survive killing the process.
         database = Room.inMemoryDatabaseBuilder(
             ApplicationProvider.getApplicationContext(),
             RemindersDatabase::class.java
