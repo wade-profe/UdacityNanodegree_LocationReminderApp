@@ -29,25 +29,6 @@ class ReminderListFragment : BaseFragment() {
     private lateinit var binding: FragmentRemindersBinding
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    val requestNotificationPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        )
-        { isEnabled ->
-            if(isEnabled){
-                navigateToAddReminder()
-            } else{
-                if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-                    raiseExplanationDialogue()
-                } else {
-                    _viewModel.notificationEnabled.value = false
-                    navigateToAddReminder()
-                }
-            }
-        }
-
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("FragmentLiveDataObserve")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -72,13 +53,6 @@ class ReminderListFragment : BaseFragment() {
             binding.refreshLayout.isRefreshing = it
         }
 
-        _viewModel.notificationEnabled.observe(viewLifecycleOwner){
-            when(it){
-                false -> raisePermissionDeniedSnackBar(getString(R.string.notification_permission_denied))
-                else -> {}
-            }
-        }
-
         return binding.root
     }
 
@@ -88,12 +62,8 @@ class ReminderListFragment : BaseFragment() {
         binding.lifecycleOwner = this
         setupRecyclerView()
         binding.addReminderFAB.setOnClickListener {
-            if (!permissionCheck(Manifest.permission.POST_NOTIFICATIONS)) {
-                Log.d("WADE", "Requesting permission")
-                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
                 navigateToAddReminder()
-            }
+
         }
     }
 
@@ -141,26 +111,6 @@ class ReminderListFragment : BaseFragment() {
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun raiseExplanationDialogue() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(getString(R.string.permission_required))
-            .setMessage(R.string.notification_permission_rationale)
-            .setPositiveButton(
-                getString(R.string.accept)
-            ) { dialog, _ ->
-                requestNotificationPermissionLauncher.launch(
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
-                dialog.dismiss()
-            }
-            .setNegativeButton(
-                R.string.decline
-            ) { dialog, _ ->
-                _viewModel.notificationEnabled.value = false
-                dialog.dismiss()
-            }
-            .show()
-    }
+
 
 }
