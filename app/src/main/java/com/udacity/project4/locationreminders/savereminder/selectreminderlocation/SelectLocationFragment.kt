@@ -30,6 +30,7 @@ import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.locationreminders.savereminder.SelectedLocation
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
+import com.udacity.project4.utils.wrapEspressoIdlingResource
 import org.koin.android.ext.android.inject
 import java.util.Locale
 
@@ -154,19 +155,24 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
-        if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
-            map.isMyLocationEnabled = true
-            var currentLocation: LatLng?
-            myLocation.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    currentLocation = LatLng(location.latitude, location.longitude)
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
+        wrapEspressoIdlingResource {
+            if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                map.isMyLocationEnabled = true
+                var currentLocation: LatLng?
+                myLocation.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        currentLocation = LatLng(location.latitude, location.longitude)
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
+                        selectedLocation = SelectedLocation(getString(R.string.dropped_pin),
+                            currentLocation!!
+                        )
+                    }
                 }
+            } else {
+                requestPermissionLauncher.launch(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
             }
-        } else {
-            requestPermissionLauncher.launch(
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
         }
     }
 
