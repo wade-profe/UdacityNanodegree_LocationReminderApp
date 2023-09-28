@@ -3,6 +3,7 @@ package com.udacity.project4
 import android.Manifest
 import android.app.Application
 import android.os.Build
+import android.widget.Toast
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso
@@ -55,10 +56,6 @@ import kotlin.test.assertNotNull
 class RemindersActivityTest :
     AutoCloseKoinTest() {
     // Extended Koin Test - embed autoclose @after method to close Koin after every test
-
-    // TODO run all tests on API 33 emulator
-    // TODO run tests on API 29
-    // TODO test app on API 33 and lower
 
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
@@ -149,6 +146,11 @@ class RemindersActivityTest :
         onView(withId(R.id.saveReminderLayout)).check(matches(isDisplayed()))
         onView(withId(R.id.selectLocation)).perform(click())
         onView(withId(R.id.map)).check(matches(isDisplayed()))
+        Espresso.closeSoftKeyboard()
+        onView(withText(R.string.select_poi))
+            .inRoot(withDecorView(not(`is`(getActivity(appContext)?.window?.decorView))))
+            .check(matches(isDisplayed()))
+        Thread.sleep(3500)
         onView(withId(R.id.save)).perform(click())
         assertNotNull(saveReminderViewModel.selectedPOI.value)
         onView(withId(R.id.selectedLocation)).check(matches(withText(saveReminderViewModel.selectedPOI.value.toString())))
@@ -179,8 +181,4 @@ class RemindersActivityTest :
                             withText(appContext.resources.getString(R.string.dropped_pin))))))
         activityScenario.close()
     }
-
-
-//    TODO: add End to End testing to the app
-
 }

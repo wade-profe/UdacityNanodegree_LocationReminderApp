@@ -31,6 +31,7 @@ import com.udacity.project4.databinding.FragmentSaveReminderBinding
 import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
+import com.udacity.project4.utils.wrapEspressoIdlingResource
 import org.koin.android.ext.android.inject
 
 const val GEOFENCE_RADIUS = 100F
@@ -183,34 +184,35 @@ class SaveReminderFragment : BaseFragment() {
 
     @SuppressLint("VisibleForTests", "MissingPermission")
     private fun createGeofence() {
-        val geofence = Geofence.Builder()
-            .setRequestId(reminderDataItem.id)
-            .setCircularRegion(
-                reminderDataItem.latitude!!,
-                reminderDataItem.longitude!!,
-                GEOFENCE_RADIUS
-            )
-            .setExpirationDuration(Geofence.NEVER_EXPIRE)
-            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            .build()
+        wrapEspressoIdlingResource {
+            val geofence = Geofence.Builder()
+                .setRequestId(reminderDataItem.id)
+                .setCircularRegion(
+                    reminderDataItem.latitude!!,
+                    reminderDataItem.longitude!!,
+                    GEOFENCE_RADIUS
+                )
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build()
 
-        val geofenceRequest = GeofencingRequest.Builder()
-            .addGeofence(geofence)
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER) // todo remove when finished
-            .build()
+            val geofenceRequest = GeofencingRequest.Builder()
+                .addGeofence(geofence)
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER) // todo remove when finished
+                .build()
 
-        geofencingClient.addGeofences(geofenceRequest, geofencePendingIntent).run {
-            addOnSuccessListener {
-                _viewModel.validateAndSaveReminder(reminderDataItem)
-            }
-            addOnFailureListener {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.geofences_not_added),
-                    Toast.LENGTH_SHORT
-                ).show()
+            geofencingClient.addGeofences(geofenceRequest, geofencePendingIntent).run {
+                addOnSuccessListener {
+                    _viewModel.validateAndSaveReminder(reminderDataItem)
+                }
+                addOnFailureListener {
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.geofences_not_added),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
-
     }
 }

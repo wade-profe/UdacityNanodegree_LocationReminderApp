@@ -56,7 +56,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         { isGranted ->
             if (isGranted) {
                 enableLocation()
-                Toast.makeText(requireActivity(), R.string.select_poi, Toast.LENGTH_LONG).show()
             } else {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
                     val builder = AlertDialog.Builder(requireContext())
@@ -155,27 +154,33 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
-        wrapEspressoIdlingResource {
             if (permissionCheck(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                map.isMyLocationEnabled = true
-                var currentLocation: LatLng?
-                myLocation.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        currentLocation = LatLng(location.latitude, location.longitude)
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoomLevel))
-                        selectedLocation = SelectedLocation(getString(R.string.dropped_pin),
-                            currentLocation!!
-                        )
+                wrapEspressoIdlingResource {
+                    map.isMyLocationEnabled = true
+                    var currentLocation: LatLng?
+                    myLocation.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            currentLocation = LatLng(location.latitude, location.longitude)
+                            map.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    currentLocation,
+                                    zoomLevel
+                                )
+                            )
+                            selectedLocation = SelectedLocation(
+                                getString(R.string.dropped_pin),
+                                currentLocation!!
+                            )
+                        }
                     }
                 }
+                Toast.makeText(requireActivity(), R.string.select_poi, Toast.LENGTH_LONG).show()
             } else {
                 requestPermissionLauncher.launch(
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             }
         }
-    }
-
     override fun onResume() {
         super.onResume()
         snackBarWasTapped?.let {
