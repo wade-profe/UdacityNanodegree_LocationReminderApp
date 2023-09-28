@@ -5,17 +5,23 @@ import android.app.Application
 import android.os.Build
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
+import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.rule.GrantPermissionRule.grant
+import atPosition
+import com.google.android.material.internal.ContextUtils.getActivity
 import com.udacity.project4.locationreminders.RemindersActivity
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
@@ -26,8 +32,10 @@ import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.not
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -38,12 +46,15 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.test.AutoCloseKoinTest
 import org.koin.test.get
+import org.koin.test.inject
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 //END TO END test to black box test the app
 class RemindersActivityTest :
-    AutoCloseKoinTest() {// Extended Koin Test - embed autoclose @after method to close Koin after every test
+    AutoCloseKoinTest() {
+    // Extended Koin Test - embed autoclose @after method to close Koin after every test
 
     // TODO run all tests on API 33 emulator
     // TODO run tests on API 29
@@ -52,6 +63,7 @@ class RemindersActivityTest :
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private val dataBindingIdlingResource = DataBindingIdlingResource()
+    val saveReminderViewModel: SaveReminderViewModel by inject()
 
     // Thanks to Stack Overflow user CommonsWare for this helpful solution (https://stackoverflow.com/a/75330411/5264775)
     @Rule
@@ -121,8 +133,14 @@ class RemindersActivityTest :
         IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
     }
 
+    /**
+     * This test should be run on API level 29 or lower
+     */
     @Test
-    fun createAndSaveNewTask(){
+    fun createAndSaveNewTask() {
+        assumeTrue(
+            Build.VERSION.SDK_INT <= 29
+        )
         val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
         dataBindingIdlingResource.monitorActivity(activityScenario)
 
@@ -132,10 +150,35 @@ class RemindersActivityTest :
         onView(withId(R.id.selectLocation)).perform(click())
         onView(withId(R.id.map)).check(matches(isDisplayed()))
         onView(withId(R.id.save)).perform(click())
-        Thread.sleep(3000)
+        assertNotNull(saveReminderViewModel.selectedPOI.value)
+        onView(withId(R.id.selectedLocation)).check(matches(withText(saveReminderViewModel.selectedPOI.value.toString())))
+        onView(withId(R.id.reminderTitle)).perform(typeText("Test title"))
+        onView(withId(R.id.reminderDescription)).perform(typeText("Test description"))
+        Espresso.closeSoftKeyboard()
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withText(R.string.reminder_saved))
+            .inRoot(withDecorView(not(`is`(getActivity(appContext)?.window?.decorView))))
+            .check(matches(isDisplayed()))
+        onView(withId(R.id.reminderssRecyclerView)).check(
+            matches(
+                atPosition(
+                    0,
+                    ViewMatchers.hasDescendant(
+                        withText("Test title")))))
+        onView(withId(R.id.reminderssRecyclerView)).check(
+            matches(
+                atPosition(
+                    0,
+                    ViewMatchers.hasDescendant(
+                        withText("Test description")))))
+        onView(withId(R.id.reminderssRecyclerView)).check(
+            matches(
+                atPosition(
+                    0, ViewMatchers
+                        .hasDescendant(
+                            withText(appContext.resources.getString(R.string.dropped_pin))))))
+        activityScenario.close()
     }
-
-
 
 
 //    TODO: add End to End testing to the app

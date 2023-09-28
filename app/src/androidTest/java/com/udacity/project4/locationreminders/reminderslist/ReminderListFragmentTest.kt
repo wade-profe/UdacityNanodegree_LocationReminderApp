@@ -47,14 +47,6 @@ import atPosition
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class ReminderListFragmentTest: AutoCloseKoinTest() {
 
-    // Save reminders in repo, check they are loaded
-
-    // No reminders in repo, check the no data image is displayed
-
-    // Check navigation when fab is pressed
-
-    // Set repo to return error, check that snackbar is displayed
-
     private lateinit var repository: FakeDataSource
     private lateinit var appContext: Application
 
@@ -152,14 +144,4 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
         onView(withId(com.google.android.material.R.id.snackbar_text))
             .check(matches(withText("Test exception")))
     }
-
-
-
-
-
-//    TODO: test the navigation of the fragments.
-//    TODO: test the displayed data on the UI.
-//    TODO: add testing for the error messages.
-
-    // Reminder: switch off device animations
 }
